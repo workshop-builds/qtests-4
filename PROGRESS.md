@@ -13,3 +13,13 @@ What changed:
 - Milestone 1 not started.
 
 Next: Milestone 1, the counter page with a big button.
+
+## 2026-10-09: Milestone 1 (claude-sonnet-5-5)
+
+What changed:
+- Replaced the project page with the counter page: the counter (`aria-live="polite"`, text-7xl, text-9xl from `sm` up) centered, and one native `<button>` labeled "+1" (min height 10rem, full width up to max-w-md). In memory only.
+- Removed the PLAN.md-reading code (`src/plan.ts`) since the project page is gone.
+- Tests: initial 0, one click shows 1, three clicks show 3, Enter/Space on the focused button (user-event), aria-live, size classes. Added the `@testing-library/user-event` dev dependency and DOM cleanup after each test.
+- `npm test` and `npm run build` pass.
+
+Next: Milestone 2, save the counter in `localStorage` under `qtests.counter`.

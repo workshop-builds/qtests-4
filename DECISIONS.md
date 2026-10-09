@@ -17,3 +17,11 @@ This is the starter stack. The output in `dist/` is plain static files that any 
 ## 2026-10-09: The project page reads PLAN.md directly
 
 The opening project page imports `PLAN.md` as raw text and lists its milestone headings. This way the page cannot drift from the plan.
+
+## 2026-10-09: The project page is removed in favor of the counter page
+
+Milestone 1 replaces the project page with the product, so the PLAN.md raw import and the milestone parser were deleted along with their tests.
+
+## 2026-10-09: Size requirements are checked through Tailwind classes
+
+jsdom does no layout, so tests check the classes that give the sizes (button `min-h-40` = 160px, counter `text-7xl` = 4.5rem) at both 375px and 1280px, since they do not change with width.
