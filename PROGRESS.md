@@ -36,3 +36,14 @@ Next: Milestone 2, save the counter in `localStorage` under `qtests.counter`.
 - Sizes: `min-h-40` is 160px (≥ 120px) and `text-7xl` is 4.5rem (≥ 4rem), going up to `text-9xl` from `sm` up. Neither drops below those values at any width. The built CSS has these rules (`--spacing:.25rem`, `--text-7xl:4.5rem`). At 375px, `w-full max-w-md` with `px-6` fits without overflow. jsdom does no layout, so tests check the classes rather than measured sizes. That fits the constraint and is recorded in DECISIONS.md.
 
 Verdict: Approved
+
+## 2026-10-09: Milestone 2 (claude-sonnet-5-5)
+
+What changed:
+- Added `src/storage.ts`: `loadCounter`, `saveCounter` and `parseStored`. The key is `qtests.counter`. Only non-negative safe integers in plain digits are accepted. Missing, `"abc"`, `"-5"`, `"1.5"`, `"1e3"`, empty and too-large values read as 0. Reads and writes are wrapped in try/catch, so if `localStorage` is unavailable (including when accessing `window.localStorage` throws) the counter keeps working in memory.
+- `App` starts from `loadCounter()` and saves the new value on every click.
+- Tests in `src/persistence.test.tsx`: stored `"41"` shows 41, a click shows 42 and stores `"42"`, remount keeps the value, `null`/`"abc"`/`"-5"` (and more bad values) read as 0, and `localStorage` that throws still counts in memory. `src/setupTests.ts` now clears `localStorage` after each test so tests stay independent.
+- `npm test` (18 tests) and `npm run build` pass.
+- The manual check (click, refresh, same number) was not run in a real browser here. The remount test covers the same logic.
+
+Next: no milestones left in PLAN.md.

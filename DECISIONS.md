@@ -25,3 +25,11 @@ Milestone 1 replaces the project page with the product, so the PLAN.md raw impor
 ## 2026-10-09: Size requirements are checked through Tailwind classes
 
 jsdom does no layout, so tests check the classes that give the sizes (button `min-h-40` = 160px, counter `text-7xl` = 4.5rem) at both 375px and 1280px, since they do not change with width.
+
+## 2026-10-09: Strict parsing of the stored value
+
+Only plain digit strings that are safe integers are accepted (`/^\d+$/`). Everything else (null, text, negative, decimal, exponent, empty, too large) reads as 0. That is the simplest rule that covers the criteria, and it never lets a bad value reach the page.
+
+## 2026-10-09: Storage failures are silent and the counter keeps counting
+
+Reads and writes of `localStorage` are wrapped in try/catch in `src/storage.ts`. If storage is blocked or full, the counter works in memory only and there is no error message, since the page has no place for one and the request asks for nothing else.

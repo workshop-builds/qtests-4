@@ -4,4 +4,6 @@ import { afterEach } from 'vitest'
 
 afterEach(() => {
   cleanup()
+  // The counter is persisted, so keep tests independent of each other.
+  window.localStorage.clear()
 })
