@@ -1,0 +1,133 @@
+# The AI builder works on this repository in sessions started by the platform: workflow_dispatch
+# only, never on push or pull requests. The agent runs as a separate user in a sandbox, without
+# any GitHub token; the job checks its commits before pushing them. Details: .github/builder/job.sh.
+# The platform checks that .github/ is unchanged before every session.
+name: Builder
+# The platform finds the run of a session by its ID, also after a restart.
+run-name: Builder ${{ inputs.kind }} ${{ inputs.session }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Session kind
+        type: choice
+        required: true
+        default: work
+        options:
+          - opening
+          - work
+          - review
+      session:
+        description: Session ID, set by the platform
+        type: string
+        required: true
+      milestone:
+        description: Milestone of PLAN.md to build or review (0 for the opening)
+        type: string
+        required: true
+        default: "0"
+      followup:
+        description: "fix: the work starts from the changes the last review requested; final: the review also checks that the whole plan is done"
+        type: choice
+        required: true
+        default: none
+        options:
+          - none
+          - fix
+          - final
+
+permissions: {}
+
+concurrency:
+  group: builder
+  cancel-in-progress: false
+
+jobs:
+  session:
+    name: Builder session
+    runs-on: ubuntu-24.04
+    # JOB_MINUTES in job.sh, which also keeps the session short enough for the push and the build.
+    timeout-minutes: 130
+    permissions:
+      contents: write
+      id-token: write
+    defaults:
+      run:
+        # An absolute path: the runner looks "bash" up in PATH, and some of its directories are
+        # writable by every user.
+        shell: /usr/bin/bash --noprofile --norc -eo pipefail {0}
+    env:
+      TOOLS: /var/lib/builder-tools
+      ROUTER_URL: "https://router.2-31-30-159.sslip.io"
+      ROUTER_AUDIENCE: "workshop-router"
+      COMMIT_NAME: "WORKSHOP builder"
+      COMMIT_EMAIL: "workshop-builder@users.noreply.github.com"
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: repo
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Prepare the sandbox
+        run: /usr/bin/bash repo/.github/builder/job.sh prepare
+
+      - name: Open the session
+        id: session
+        run: /usr/bin/bash "$TOOLS/job.sh" session
+
+      # MAX_SESSION_MINUTES + AGENT_GRACE_MINUTES + 1 (job.sh): only if the sandbox does not stop.
+      - name: Run the AI builder
+        id: agent
+        continue-on-error: true
+        timeout-minutes: 96
+        run: /usr/bin/bash "$TOOLS/job.sh" agent
+
+      - name: Close the session
+        if: always() && steps.session.outcome == 'success'
+        run: /usr/bin/bash "$TOOLS/job.sh" end-session
+
+      - name: Check and push the commits
+        env:
+          PUSH_TOKEN: ${{ github.token }}
+        run: /usr/bin/bash "$TOOLS/job.sh" push
+
+      - name: Build the app
+        timeout-minutes: 25
+        run: /usr/bin/bash "$TOOLS/job.sh" build
+
+      - name: Upload the app
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app
+          path: out/app
+          retention-days: 3
+          if-no-files-found: error
+          include-hidden-files: true
+
+      - name: Collect the session summary
+        if: always() && (steps.agent.outcome == 'success' || steps.agent.outcome == 'failure')
+        run: /usr/bin/bash "$TOOLS/job.sh" summary
+
+      - name: Upload the session summary
+        if: always() && (steps.agent.outcome == 'success' || steps.agent.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: summary
+          path: out/summary.json
+          retention-days: 3
+          if-no-files-found: warn
+
+      - name: Fail if the session failed
+        if: steps.agent.outcome == 'failure'
+        run: |
+          echo "::error::The builder session failed: see the step Run the AI builder"
+          exit 1
