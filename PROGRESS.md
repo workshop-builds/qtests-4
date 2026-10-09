@@ -23,3 +23,16 @@ What changed:
 - `npm test` and `npm run build` pass.
 
 Next: Milestone 2, save the counter in `localStorage` under `qtests.counter`.
+
+## Review of milestone 1
+
+2026-10-09, claude-opus-5-5. Checked against the milestone 1 acceptance criteria in PLAN.md.
+
+- `npm ci`, then `npm test`: 5 of 5 tests pass. `npm run build` (`tsc -b && vite build`) passes.
+- On load: `src/App.tsx` shows the counter `0` in a `min-h-screen` flex container centered on both axes, with one native `<button type="button">` labeled "+1". A test checks for exactly one button.
+- Clicks: a test checks that the counter shows `1` after one click and `3` after three.
+- Keyboard: it is a native `<button>`, and a user-event test tabs to it and checks that Enter and Space each add 1.
+- `aria-live="polite"` is on the counter element, and a test checks it.
+- Sizes: `min-h-40` is 160px (≥ 120px) and `text-7xl` is 4.5rem (≥ 4rem), going up to `text-9xl` from `sm` up. Neither drops below those values at any width. The built CSS has these rules (`--spacing:.25rem`, `--text-7xl:4.5rem`). At 375px, `w-full max-w-md` with `px-6` fits without overflow. jsdom does no layout, so tests check the classes rather than measured sizes. That fits the constraint and is recorded in DECISIONS.md.
+
+Verdict: Approved
