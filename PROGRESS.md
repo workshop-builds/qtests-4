@@ -47,3 +47,17 @@ What changed:
 - The manual check (click, refresh, same number) was not run in a real browser here. The remount test covers the same logic.
 
 Next: no milestones left in PLAN.md.
+
+## Review of milestone 2
+
+2026-10-09, claude-opus-5-5. Checked against the milestone 2 acceptance criteria in PLAN.md, and checked that every milestone in PLAN.md is done.
+
+- `npm ci`, then `npm test`: 18 of 18 tests pass in 2 files. `npm run build` (`tsc -b && vite build`) passes.
+- Writes: `App` calls `saveCounter(next)` on every click, and the click is the only way the value changes. `saveCounter` writes `String(value)` under `qtests.counter`.
+- Load: `useState(loadCounter)` starts from the stored value. A test sets `"41"`, sees `41`, clicks once, sees `42`, and checks that `"42"` is stored.
+- Bad values: `parseStored` accepts only `/^\d+$/` safe integers. Tests cover `null`, `"abc"` and `"-5"`, plus `"1.5"`, `""`, `"1e3"`, `"NaN"` and a value that is too large. Each one reads as 0, and the app keeps counting and storing.
+- No storage: reads and writes are wrapped in try/catch. Tests cover `getItem`/`setItem` throwing and the `window.localStorage` getter throwing. In both cases the counter still counts in memory.
+- Manual check (click, refresh, same number): I did not run it in a real browser. The headless-browser check I tried was blocked in this session because it needed approval. The builder did not run it either. The unmount/remount test covers the same logic (load on mount, save on click). The code path is small and direct, so I do not count this as a blocker. A person should still try it once in a browser.
+- All milestones: PLAN.md has 2 milestones. Milestone 1 still holds, since its tests in `src/App.test.tsx` pass and the button and counter markup has not changed. Milestone 2 is checked above. No milestone is missing.
+
+Verdict: Approved
